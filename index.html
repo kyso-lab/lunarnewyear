@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ 新年揮春設計師 ✨</title>
+    <!-- 引入 html2canvas 用於截圖保存 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --red-primary: #D32F2F;
+            --red-dark: #8B0000;
+            --gold: #FFD700;
+            --bg-cream: #FFF8E1;
+            --panel-bg: #1a1a1a;
+            --text-light: #fff;
+            --selected-border: 4px solid #FFD700;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: var(--panel-bg);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- 歡迎畫面 --- */
+        #welcome-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--red-primary); 
+            background-image: radial-gradient(circle at center, #E53935 0%, #8B0000 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        .border-decoration {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px; bottom: 20px;
+            border: 4px solid var(--gold);
+            border-radius: 20px;
+            pointer-events: none;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        #welcome-screen h1 {
+            font-size: 5rem;
+            color: var(--gold);
+            text-shadow: 4px 4px 0px #5a0000;
+            margin-bottom: 10px;
+            letter-spacing: 5px;
+            font-weight: 900;
+        }
+
+        #start-btn {
+            margin-top: 50px;
+            padding: 25px 80px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: var(--gold);
+            color: var(--red-dark);
+            border: 6px solid #fff;
+            border-radius: 80px;
+            cursor: pointer;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+            z-index: 10000;
+        }
+
+        #start-btn:active { transform: scale(0.95); }
+
+        /* --- 主應用程式容器 --- */
+        #app-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: row;
+        }
+
+        /* --- 左側：畫布區 --- */
+        #canvas-area {
+            flex: 6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: var(--bg-cream);
+            background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+        }
+
+        /* 揮春容器 */
+        #fai-chun {
+            /* 預設大小 */
+            width: 400px;  
+            height: 400px; 
+            background-color: var(--red-primary);
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 斗方模式：將外框旋轉 45度 */
+        #fai-chun.doufang {
+            transform: rotate(45deg);
+            box-shadow: 10px 10px 40px rgba(0,0,0,0.4);
+        }
+
+        #fc-pattern {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.3;
+            pointer-events: none;
+            background-size: 100px 100px;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        /* 
+           修正重點 3：底紋方向修正 
+           當外框旋轉 45 度時，內部的底紋需要反向旋轉 -45 度，
+           這樣視覺上才是「正」的。
+           同時放大寬高，以免旋轉後角落出現空白。
+        */
+        #fai-chun.doufang #fc-pattern {
+            transform: rotate(-45deg) scale(1.5); 
+        }
+
+        #fc-text {
+            position: relative;
+            z-index: 3;
+            font-size: 180px; /* 斗方單字預設大一點 */
+            font-weight: 900;
+            color: var(--gold);
+            text-align: center;
+            line-height: 1.1;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+            white-space: pre-wrap;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 斗方模式下的文字：需要反向旋轉回正 */
+        #fai-chun.doufang #fc-text {
+            transform: rotate(-45deg);
+            writing-mode: horizontal-tb; /* 單字不需要直書 */
+        }
+
+        /* 直揮春模式 */
+        #fc-text.vertical-mode {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 15px;
+            font-size: 100px;
+        }
+
+        #sticker-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        /* 斗方模式下，貼圖容器也要反轉 */
+        #fai-chun.doufang #sticker-container {
+            transform: rotate(-45deg);
+            width: 150%; height: 150%; 
+            top: -25%; left: -25%;
+        }
+
+        .sticker-item {
+            position: absolute;
+            font-size: 60px;
+            cursor: grab;
+            pointer-events: auto;
+            user-select: none;
+            filter: drop-shadow(3px 3px 3px rgba(0,0,0,0.4));
+            transition: transform 0.1s;
+        }
+        
+        .sticker-item:active {
+            cursor: grabbing;
+            transform: scale(1.2);
+        }
+
+        /* --- 右側：控制面板 --- */
+        #controls-area {
+            flex: 4;
+            background: var(--panel-bg);
+            border-left: 5px solid var(--gold);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            color: white;
+            overflow-y: auto;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
+
+        .step-dot {
+            width: 15px; height: 15px; border-radius: 50%; background: #555;
+            transition: 0.3s; position: relative;
+        }
+        .step-dot::after {
+            content: ''; position: absolute; top: 50%; left: 100%; 
+            width: 1000%; height: 2px; background: #333; z-index: -1; transform: translateY(-50%);
+        }
+        .step-dot:last-child::after { display: none; }
+        .step-dot.active {
+            background: var(--gold); box-shadow: 0 0 10px var(--gold); transform: scale(1.4);
+        }
+
+        .step-container {
+            display: none; flex-direction: column; height: 100%; animation: fadeIn 0.4s ease;
+        }
+        .step-container.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        .step-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; border-bottom: 2px solid #444; padding-bottom: 15px;
+        }
+        .step-title { color: var(--gold); font-size: 1.8rem; font-weight: bold; }
+
+        .selection-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+            overflow-y: auto; padding: 5px;
+        }
+
+        .opt-btn {
+            background: #333; border: 2px solid #555; border-radius: 16px;
+            color: #fff; padding: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; min-height: 110px;
+        }
+        .opt-btn span { font-size: 1.1rem; margin-top: 5px; font-weight: bold; }
+        .opt-btn.selected { border: var(--selected-border); background: #444; transform: scale(1.02); }
+        .opt-btn:active { transform: scale(0.95); }
+
+        .color-circle {
+            width: 50px; height: 50px; border-radius: 50%;
+            margin-bottom: 10px; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .icon-lg { font-size: 40px; margin-bottom: 5px; }
+
+        /* 
+           修正重點 2：放大底紋選擇頁的圖示 
+           針對 #step-3 下的按鈕進行特別放大處理
+        */
+        #step-3 .selection-grid {
+            grid-template-columns: repeat(2, 1fr); /* 改為兩列，讓按鈕更大 */
+        }
+        #step-3 .opt-btn {
+            min-height: 160px; /* 增加按鈕高度 */
+        }
+        #step-3 .icon-lg {
+            font-size: 80px; /* 超大圖示 */
+            margin-bottom: 15px;
+            /* 這裡也加上旋轉，讓選單裡的圖案看起來也是菱形的感覺，或者維持正向皆可。
+               使用者要求左邊畫布要轉，這裡為了清楚辨識，維持正向可能較好，
+               但為了配合畫布邏輯，我們讓它保持正向即可，因為按鈕是正方形的。
+               如果需要按鈕內的圖示也轉，可以加 transform: rotate(-45deg); */
+        }
+
+        /* 貼圖頁面的圖示 */
+        .sticker-grid .opt-btn { min-height: 100px; }
+        .sticker-grid .icon-lg { font-size: 55px; margin-bottom: 0; }
+
+        /* 形狀預覽 */
+        .shape-preview {
+            background: var(--red-primary); border: 2px solid gold; margin-bottom: 10px;
+        }
+        .shape-doufang { width: 40px; height: 40px; transform: rotate(45deg); margin: 15px; }
+        .shape-rect { width: 30px; height: 60px; }
+
+        .action-btn {
+            background: var(--gold); color: #000; border: none; padding: 15px 30px;
+            border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.2rem; min-width: 120px;
+        }
+        .action-btn.secondary { background: #555; color: #fff; }
+
+        .ai-btn {
+            background: linear-gradient(45deg, #FF4081, #7C4DFF);
+            color: white; border: none; padding: 10px 20px;
+            border-radius: 20px; font-weight: bold; cursor: pointer;
+            margin-bottom: 15px; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(124, 77, 255, 0.4);
+        }
+        .ai-btn:hover { filter: brightness(1.1); }
+
+        input[type="text"] {
+            width: 100%; padding: 20px; border-radius: 15px;
+            border: 4px solid var(--gold); background: #333; color: var(--gold);
+            font-size: 2rem; text-align: center; margin-bottom: 10px; box-sizing: border-box;
+        }
+
+        #delete-zone {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9); color: white; padding: 15px 40px;
+            border-radius: 40px; display: none; z-index: 10;
+            font-size: 1.5rem; font-weight: bold; border: 3px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* 結果彈窗 (Modal) */
+        #result-modal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 20000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #result-img {
+            max-width: 90%;
+            max-height: 70%;
+            border: 5px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255,215,0,0.5);
+        }
+        .modal-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: var(--gold);
+            border: none; border-radius: 50px;
+            cursor: pointer;
+        }
+        .modal-close {
+            position: absolute; top: 20px; right: 20px;
+            color: white; font-size: 3rem; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-screen">
+        <div class="border-decoration"></div>
+        <h1>🧧 新年揮春設計師 🧧</h1>
+        <p style="font-size: 1.8rem; margin-bottom: 30px; color: #fff;">設計獨一無二的揮春！</p>
+        <button id="start-btn" onclick="startApp()">開始製作</button>
+    </div>
+
+    <div id="app-container">
+        <!-- 左側：畫布區域 -->
+        <div id="canvas-area">
+            <!-- 預設加上 doufang class -->
+            <div id="fai-chun" class="doufang">
+                <div id="fc-pattern"></div>
+                <div id="fc-text">福</div>
+                <div id="sticker-container"></div>
+            </div>
+            <div id="delete-zone">🗑️ 拖到這裡刪除</div>
+        </div>
+
+        <!-- 右側：控制面板 -->
+        <div id="controls-area">
+            <div class="progress-bar">
+                <div class="step-dot active" id="dot-1"></div>
+                <div class="step-dot" id="dot-2"></div>
+                <div class="step-dot" id="dot-3"></div>
+                <div class="step-dot" id="dot-4"></div>
+                <div class="step-dot" id="dot-5"></div>
+                <div class="step-dot" id="dot-6"></div>
+            </div>
+
+            <!-- STEP 1: 選擇形狀 -->
+            <div id="step-1" class="step-container active">
+                <div class="step-header">
+                    <div class="step-title">1. 選擇形狀</div>
+                    <button class="action-btn btn-next" onclick="nextStep(2)">下一步 ➡️</button>
+                </div>
+                
+                <div class="selection-grid" style="grid-template-columns: 1fr 1fr;">
+                    <button class="opt-btn selected" onclick="changeShape('doufang', this)">
+                        <div class="shape-preview shape-doufang"></div>
+                        <span>斗方 (單字)</span>
+                    </button>
+                    <button class="opt-btn" onclick="changeShape('rect', this)">
+                        <div class="shape-preview shape-rect"></div>
+                        <span>直揮春 (多字)</span>
+                    </button>
+                </div>
+                <p style="margin-top: 20px; color: #aaa; font-size: 1rem; text-align:center;">
+                    * 斗方：只能輸入一個字 (如：福)<br>
+                    * 直揮春：可輸入四字祝賀語
+                </p>
+            </div>
+
+            <!-- STEP 2: 選擇底色 -->
+            <div id="step-2" class="step-container">
+                <div class="step-header">
+                    <button class="action-btn secondary" onclick="prevStep(1)">⬅️ 上一步</button>
+                    <div class="step-title">2. 選擇底色</div>
+                    <button class="action-btn btn-next" onclick="nextStep(3)">下一步 ➡️</button>
+                </div>
+                
+                <div class="selection-grid">
+                    <button class="opt-btn selected" onclick="changeColor('#D32F2F', this)"><div class="color-circle" style="background:#D32F2F"></div><span>紅色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#FFEB3B', this)"><div class="color-circle" style="background:#FFEB3B"></div><span>黃色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#FF9800', this)"><div class="color-circle" style="background:#FF9800"></div><span>橙色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#E91E63', this)"><div class="color-circle" style="background:#E91E63"></div><span>桃紅色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#6A1B9A', this)"><div class="color-circle" style="background:#6A1B9A"></div><span>紫色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#1976D2', this)"><div class="color-circle" style="background:#1976D2"></div><span>藍色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#388E3C', this)"><div class="color-circle" style="background:#388E3C"></div><span>綠色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#4DD0E1', this)"><div class="color-circle" style="background:#4DD0E1"></div><span>淺藍色</span></button>
+                    <button class="opt-btn" onclick="changeColor('#000000', this)"><div class="color-circle" style="background:#000"></div><span>黑色</span></button>
+                </div>
+            </div>
+
+            <!-- STEP 3: 選擇底紋 (圖示已放大) -->
+            <div id="step-3" class="step-container">
+                <div class="step-header">
+                    <button class="action-btn secondary" onclick="prevStep(2)">⬅️ 上一步</button>
+                    <div class="step-title">3. 選擇底紋</div>
+                    <button class="action-btn btn-next" onclick="nextStep(4)">下一步 ➡️</button>
+                </div>
+                
+                <div class="selection-grid">
+                    <button class="opt-btn selected" onclick="changePattern('pat-none', this)"><span class="icon-lg">🚫</span><span>無</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-coins', this)"><span class="icon-lg">🪙</span><span>銅錢</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-lantern', this)"><span class="icon-lg">🏮</span><span>燈籠</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-yuanbao', this)"><span class="icon-lg">🧈</span><span>元寶</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-flower', this)"><span class="icon-lg">🌸</span><span>桃花</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-bamboo-leaf', this)"><span class="icon-lg">🎋</span><span>竹子</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-knot', this)"><span class="icon-lg">🎗️</span><span>如意結</span></button>
+                    <button class="opt-btn" onclick="changePattern('pat-cloud', this)"><span class="icon-lg">☁️</span><span>祥雲</span></button>
+                </div>
+            </div>
+
+            <!-- STEP 4: 文字設計 (限制單字) -->
+            <div id="step-4" class="step-container">
+                <div class="step-header">
+                    <button class="action-btn secondary" onclick="prevStep(3)">⬅️ 上一步</button>
+                    <div class="step-title">4. 輸入賀詞</div>
+                    <button class="action-btn btn-next" onclick="nextStep(5)">下一步 ➡️</button>
+                </div>
+
+                <button class="ai-btn" onclick="aiGenerateText()">✨ AI 幫我想賀詞</button>
+
+                <!-- placeholder 會動態改變 -->
+                <input type="text" id="text-input" placeholder="輸入文字" oninput="updateText(this.value)" maxlength="1">
+                
+                <div class="group-label" style="color:#aaa; margin-bottom:10px; font-size: 1.2rem;">文字顏色：</div>
+                <div class="selection-grid" style="grid-template-columns: repeat(5, 1fr);">
+                    <button class="opt-btn selected" onclick="changeTextColor('#FFD700', this)"><div class="color-circle" style="background:#FFD700"></div></button>
+                    <button class="opt-btn" onclick="changeTextColor('#000000', this)"><div class="color-circle" style="background:#000"></div></button>
+                    <button class="opt-btn" onclick="changeTextColor('#FFFFFF', this)"><div class="color-circle" style="background:#fff"></div></button>
+                    <button class="opt-btn" onclick="changeTextColor('#D32F2F', this)"><div class="color-circle" style="background:#D32F2F"></div></button>
+                    <button class="opt-btn" onclick="changeTextColor('#1E88E5', this)"><div class="color-circle" style="background:#1E88E5"></div></button>
+                </div>
+            </div>
+
+            <!-- STEP 5: 貼圖裝飾 -->
+            <div id="step-5" class="step-container">
+                <div class="step-header">
+                    <button class="action-btn secondary" onclick="prevStep(4)">⬅️ 上一步</button>
+                    <div class="step-title">5. 加入貼圖</div>
+                    <button class="action-btn btn-next" onclick="nextStep(6)">下一步 ➡️</button>
+                </div>
+
+                <div class="selection-grid sticker-grid">
+                    <button class="opt-btn" onclick="addSticker('🐍')"><span class="icon-lg">🐍</span></button>
+                    <button class="opt-btn" onclick="addSticker('🧧')"><span class="icon-lg">🧧</span></button>
+                    <button class="opt-btn" onclick="addSticker('🍊')"><span class="icon-lg">🍊</span></button>
+                    <button class="opt-btn" onclick="addSticker('🧨')"><span class="icon-lg">🧨</span></button>
+                    <button class="opt-btn" onclick="addSticker('🍍')"><span class="icon-lg">🍍</span></button>
+                    <button class="opt-btn" onclick="addSticker('🐟')"><span class="icon-lg">🐟</span></button>
+                    <button class="opt-btn" onclick="addSticker('😺')"><span class="icon-lg">😺</span></button>
+                    <button class="opt-btn" onclick="addSticker('🌸')"><span class="icon-lg">🌸</span></button>
+                    <button class="opt-btn" onclick="addSticker('🦁')"><span class="icon-lg">🦁</span></button>
+                </div>
+            </div>
+
+            <!-- STEP 6: 完成 (iPad 保存) -->
+            <div id="step-6" class="step-container">
+                <div class="step-header">
+                    <button class="action-btn secondary" onclick="prevStep(5)">⬅️ 上一步</button>
+                    <div class="step-title">6. 完成！</div>
+                </div>
+
+                <div style="text-align: center; color: white; padding-top: 20px;">
+                    <h2 style="color: var(--gold); font-size: 2rem;">作品完成！</h2>
+                    <p style="font-size: 1.2rem;">點擊下方按鈕來保存圖片</p>
+                    
+                    <div style="margin-top: 40px; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                        <!-- 修正重點 4：使用程式碼生成圖片供下載 -->
+                        <button class="action-btn" style="font-size: 1.5rem; padding: 20px 50px; background: #4CAF50; color: white;" onclick="saveImage()">
+                            💾 保存圖片 (iPad 適用)
+                        </button>
+                        
+                        <button class="action-btn secondary" style="font-size: 1.5rem; padding: 20px;" onclick="location.reload()">
+                            🔄 再玩一次
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結果彈窗 -->
+    <div id="result-modal">
+        <div class="modal-close" onclick="closeModal()">&times;</div>
+        <h2 style="color: var(--gold); margin-bottom: 10px;">長按圖片加入「照片」</h2>
+        <img id="result-img" src="" alt="Result">
+        <button class="modal-btn" onclick="closeModal()">關閉</button>
+    </div>
+
+    <script>
+        // --- 變數設定 ---
+        let currentStep = 1;
+        const totalSteps = 6;
+        let currentShape = 'doufang'; // 預設
+        
+        // --- 啟動 App ---
+        function startApp() {
+            const welcome = document.getElementById('welcome-screen');
+            const app = document.getElementById('app-container');
+            
+            welcome.style.transition = 'opacity 0.5s';
+            welcome.style.opacity = '0';
+            
+            setTimeout(() => {
+                welcome.style.display = 'none';
+                app.style.display = 'flex';
+                updateText(document.getElementById('text-input').value || "福");
+            }, 500);
+        }
+
+        // --- 步驟導航 ---
+        function nextStep(targetStep) {
+            if (targetStep > totalSteps) return;
+            switchStep(targetStep);
+        }
+
+        function prevStep(targetStep) {
+            if (targetStep < 1) return;
+            switchStep(targetStep);
+        }
+
+        function switchStep(step) {
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            document.getElementById(`dot-${currentStep}`).classList.remove('active');
+            
+            currentStep = step;
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            document.getElementById(`dot-${currentStep}`).classList.add('active');
+        }
+
+        // --- 修正重點 1：更改形狀與文字限制 ---
+        function changeShape(shape, btn) {
+            const fc = document.getElementById('fai-chun');
+            const textDiv = document.getElementById('fc-text');
+            const input = document.getElementById('text-input');
+            currentShape = shape;
+
+            if (shape === 'rect') {
+                // 直揮春
+                fc.classList.remove('doufang');
+                fc.style.width = '300px';
+                fc.style.height = '600px'; 
+                
+                textDiv.classList.remove('doufang-text');
+                textDiv.classList.add('vertical-mode');
+                
+                // 放寬限制
+                input.maxLength = 4;
+                input.placeholder = "輸入四字賀詞";
+                
+            } else {
+                // 斗方
+                fc.classList.add('doufang');
+                fc.style.width = '400px';
+                fc.style.height = '400px';
+                
+                textDiv.classList.remove('vertical-mode');
+                
+                // 嚴格限制：只能一個字
+                input.maxLength = 1;
+                input.placeholder = "輸入單字 (如：福)";
+                
+                // 如果當前文字超過一個字，截斷它
+                if (input.value.length > 1) {
+                    input.value = input.value[0];
+                }
+            }
+
+            // 重新渲染文字
+            let currentVal = input.value;
+            // 如果切換到斗方且為空，預設給「福」
+            if (shape === 'doufang' && !currentVal) currentVal = "福";
+            // 如果切換到直揮春且為空，預設給「大吉大利」
+            if (shape === 'rect' && !currentVal) currentVal = "大吉大利";
+            
+            input.value = currentVal;
+            updateText(currentVal);
+
+            const buttons = btn.parentElement.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        function changeColor(color, btn) {
+            document.getElementById('fai-chun').style.backgroundColor = color;
+            const buttons = btn.parentElement.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        function changePattern(type, btn) {
+            const patternDiv = document.getElementById('fc-pattern');
+            let svgContent = '';
+            const strokeColor = 'rgba(255,255,255,0.4)'; 
+
+            if (type === 'pat-coins') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="20" stroke="${strokeColor}" stroke-width="2" fill="none"/><rect x="22" y="22" width="16" height="16" stroke="${strokeColor}" stroke-width="2" fill="none"/></svg>')`;
+            } else if (type === 'pat-lantern') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><path d="M40,10 C25,10 20,25 20,40 C20,55 25,70 40,70 C55,70 60,55 60,40 C60,25 55,10 40,10 Z" stroke="${strokeColor}" stroke-width="2" fill="none"/><line x1="40" y1="10" x2="40" y2="70" stroke="${strokeColor}" stroke-width="2"/><line x1="30" y1="12" x2="30" y2="68" stroke="${strokeColor}" stroke-width="1"/><line x1="50" y1="12" x2="50" y2="68" stroke="${strokeColor}" stroke-width="1"/><rect x="35" y="5" width="10" height="5" fill="none" stroke="${strokeColor}" stroke-width="2"/><rect x="35" y="70" width="10" height="5" fill="none" stroke="${strokeColor}" stroke-width="2"/><line x1="40" y1="75" x2="40" y2="80" stroke="${strokeColor}" stroke-width="2"/></svg>')`;
+            } else if (type === 'pat-yuanbao') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M10,40 Q30,60 50,40 L45,30 Q30,45 15,30 Z" stroke="${strokeColor}" stroke-width="2" fill="none"/><circle cx="30" cy="25" r="8" stroke="${strokeColor}" stroke-width="2" fill="none"/></svg>')`;
+            } else if (type === 'pat-flower') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="20" r="8" stroke="${strokeColor}" stroke-width="2" fill="none"/><circle cx="20" cy="30" r="8" stroke="${strokeColor}" stroke-width="2" fill="none"/><circle cx="40" cy="30" r="8" stroke="${strokeColor}" stroke-width="2" fill="none"/><circle cx="30" cy="40" r="8" stroke="${strokeColor}" stroke-width="2" fill="none"/></svg>')`;
+            } else if (type === 'pat-bamboo-leaf') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M30,50 Q10,30 30,10 Q50,30 30,50" stroke="${strokeColor}" stroke-width="2" fill="none"/></svg>')`;
+            } else if (type === 'pat-knot') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><path d="M40,20 L60,40 L40,60 L20,40 Z" stroke="${strokeColor}" stroke-width="3" fill="none"/><path d="M40,10 L40,30 M60,40 L40,40 M40,60 L40,80 M20,40 L40,40" stroke="${strokeColor}" stroke-width="2"/><circle cx="40" cy="40" r="5" stroke="${strokeColor}" stroke-width="2" fill="none"/></svg>')`;
+            } else if (type === 'pat-cloud') {
+                svgContent = `url('data:image/svg+xml;utf8,<svg width="80" height="60" viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg"><path d="M10,40 Q15,25 30,30 Q35,15 50,20 Q65,15 70,30 Q80,35 70,50 Q60,55 50,50 L30,50 Q15,55 10,40 Z" stroke="${strokeColor}" stroke-width="2" fill="none"/></svg>')`;
+            } else {
+                svgContent = 'none';
+            }
+
+            patternDiv.style.backgroundImage = svgContent;
+            const buttons = btn.parentElement.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        // --- 修正重點 1：更新文字邏輯 (限制單字) ---
+        function updateText(val) {
+            const textDiv = document.getElementById('fc-text');
+            
+            if (!val) {
+                val = currentShape === 'doufang' ? "福" : "大吉大利";
+            }
+
+            textDiv.innerHTML = "";
+            
+            if (currentShape === 'doufang') {
+                // 斗方：只顯示一個字
+                // 如果使用者輸入超過一個字，只取第一個
+                const char = val.substring(0, 1);
+                textDiv.innerText = char;
+                textDiv.style.fontSize = "180px";
+            } else {
+                // 直揮春
+                textDiv.innerText = val;
+                if (val.length > 4) textDiv.style.fontSize = "70px";
+                else textDiv.style.fontSize = "100px";
+            }
+        }
+
+        function changeTextColor(color, btn) {
+            document.getElementById('fc-text').style.color = color;
+            const buttons = btn.parentElement.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        // --- 修正重點 1：AI 賀詞區分單字與四字 ---
+        const aiWishesDoufang = ["福", "春", "吉", "滿", "順", "財", "旺", "壽", "樂", "安"];
+        const aiWishesRect = [
+            "大吉大利", "身體健康", "學業進步", "笑口常開", 
+            "心想事成", "萬事如意", "龍馬精神", "步步高陞",
+            "出入平安", "聰明伶俐", "快高長大", "五福臨門"
+        ];
+
+        function aiGenerateText() {
+            let wish = "";
+            if (currentShape === 'doufang') {
+                const randomIndex = Math.floor(Math.random() * aiWishesDoufang.length);
+                wish = aiWishesDoufang[randomIndex];
+            } else {
+                const randomIndex = Math.floor(Math.random() * aiWishesRect.length);
+                wish = aiWishesRect[randomIndex];
+            }
+            
+            // 更新輸入框
+            const input = document.getElementById('text-input');
+            input.value = wish;
+            
+            // 觸發文字更新
+            updateText(wish);
+            
+            const btn = document.querySelector('.ai-btn');
+            btn.innerHTML = "✨ 已生成： " + wish;
+            setTimeout(() => {
+                btn.innerHTML = "✨ AI 幫我想賀詞";
+            }, 1500);
+        }
+
+        // --- 貼圖拖曳功能 ---
+        let activeSticker = null;
+        let offsetX, offsetY;
+
+        function addSticker(emoji) {
+            const container = document.getElementById('sticker-container');
+            const el = document.createElement('div');
+            el.classList.add('sticker-item');
+            el.innerText = emoji;
+            
+            el.style.left = (Math.random() * 50 + 25) + '%';
+            el.style.top = (Math.random() * 50 + 25) + '%';
+
+            el.addEventListener('touchstart', handleTouchStart, {passive: false});
+            el.addEventListener('mousedown', handleMouseDown);
+
+            container.appendChild(el);
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            activeSticker = e.target;
+            const touch = e.touches[0];
+            const rect = activeSticker.getBoundingClientRect();
+            offsetX = touch.clientX - rect.left;
+            offsetY = touch.clientY - rect.top;
+            
+            document.getElementById('delete-zone').style.display = 'block';
+
+            document.addEventListener('touchmove', handleTouchMove, {passive: false});
+            document.addEventListener('touchend', handleTouchEnd);
+        }
+
+        function handleTouchMove(e) {
+            if (!activeSticker) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            activeSticker.style.position = 'fixed';
+            activeSticker.style.left = (touch.clientX - offsetX) + 'px';
+            activeSticker.style.top = (touch.clientY - offsetY) + 'px';
+            activeSticker.style.zIndex = 9999;
+        }
+
+        function handleTouchEnd(e) {
+            const touch = e.changedTouches[0];
+            const deleteZone = document.getElementById('delete-zone').getBoundingClientRect();
+            
+            if (touch.clientX >= deleteZone.left && touch.clientX <= deleteZone.right &&
+                touch.clientY >= deleteZone.top && touch.clientY <= deleteZone.bottom) {
+                activeSticker.remove();
+            } else {
+                const container = document.getElementById('sticker-container');
+                const rect = container.getBoundingClientRect();
+                const relX = touch.clientX - offsetX - rect.left;
+                const relY = touch.clientY - offsetY - rect.top;
+                
+                activeSticker.style.position = 'absolute';
+                activeSticker.style.zIndex = '';
+                activeSticker.style.left = relX + 'px';
+                activeSticker.style.top = relY + 'px';
+            }
+
+            activeSticker = null;
+            document.getElementById('delete-zone').style.display = 'none';
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+        }
+
+        function handleMouseDown(e) {
+            activeSticker = e.target;
+            const rect = activeSticker.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            document.getElementById('delete-zone').style.display = 'block';
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleMouseMove(e) {
+            if (!activeSticker) return;
+            activeSticker.style.position = 'fixed';
+            activeSticker.style.left = (e.clientX - offsetX) + 'px';
+            activeSticker.style.top = (e.clientY - offsetY) + 'px';
+            activeSticker.style.zIndex = 9999;
+        }
+
+        function handleMouseUp(e) {
+            const deleteZone = document.getElementById('delete-zone').getBoundingClientRect();
+            if (e.clientX >= deleteZone.left && e.clientX <= deleteZone.right &&
+                e.clientY >= deleteZone.top && e.clientY <= deleteZone.bottom) {
+                activeSticker.remove();
+            } else {
+                const container = document.getElementById('sticker-container');
+                const rect = container.getBoundingClientRect();
+                activeSticker.style.position = 'absolute';
+                activeSticker.style.left = (e.clientX - offsetX - rect.left) + 'px';
+                activeSticker.style.top = (e.clientY - offsetY - rect.top) + 'px';
+                activeSticker.style.zIndex = '';
+            }
+            activeSticker = null;
+            document.getElementById('delete-zone').style.display = 'none';
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        // --- 修正重點 4：iPad 保存功能 (html2canvas) ---
+        function saveImage() {
+            const element = document.getElementById('fai-chun');
+            
+            // 顯示載入中提示
+            const btn = document.querySelector('#step-6 .action-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "🖼️ 正在生成圖片...";
+            
+            // 使用 html2canvas 截圖
+            html2canvas(element, {
+                backgroundColor: null, // 保持透明背景 (雖然元素有背景色)
+                scale: 2, // 提高解析度
+                useCORS: true
+            }).then(canvas => {
+                // 將 Canvas 轉為圖片 URL
+                const imgData = canvas.toDataURL("image/png");
+                
+                // 顯示結果 Modal
+                const modal = document.getElementById('result-modal');
+                const resultImg = document.getElementById('result-img');
+                resultImg.src = imgData;
+                modal.style.display = 'flex';
+                
+                // 恢復按鈕文字
+                btn.innerText = originalText;
+            }).catch(err => {
+                alert("圖片生成失敗，請稍後再試。");
+                console.error(err);
+                btn.innerText = originalText;
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('result-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
